@@ -4,39 +4,39 @@ import tensorflow as tf
 import tensorflow_addons as tfa
 import numpy as np
 import os
-import config
+from . import config
 
 kernel_initializer = tf.random_normal_initializer(mean=0.0, stddev=0.02)
 gamma_initializer = tf.random_normal_initializer(mean=0.0, stddev=0.02)
-
+cfg = config.Configuration()
 class GeneratorModel:
     def unet_architecture(self):
-        inp = tf.keras.layers.Input(shape = (*config.IMAGE_SIZE))
-        assert config.IMAGE_SIZE[0]==256, \
-        "Image size {config.IMAGE_SIZE[:2]} not supported"
+        inp = tf.keras.layers.Input(shape = cfg.IMAGE_SIZE)
+        assert cfg.IMAGE_SIZE[0]==256, \
+        "Image size {cfg.IMAGE_SIZE[:2]} not supported"
 
         downstack =[
-            downsample(64, 4),
-            downsample(128, 4),
-            downsample(256, 4),
-            downsample(512, 4),
-            downsample(512, 4),
-            downsample(512, 4),
-            downsample(512, 4),
-            downsample(512, 4)
+            self.downsample(64, 4),
+            self.downsample(128, 4),
+            self.downsample(256, 4),
+            self.downsample(512, 4),
+            self.downsample(512, 4),
+            self.downsample(512, 4),
+            self.downsample(512, 4),
+            self.downsample(512, 4)
         ]
 
         upstack = [
-            upsample(512, 4, apply_dropout=True),
-            upsample(512, 4, apply_dropout=True),
-            upsample(512, 4, apply_dropout=True),
-            upsample(512, 4),
-            upsample(256, 4),
-            upsample(128, 4),
-            upsample(64, 4),
+            self.upsample(512, 4, apply_dropout=True),
+            self.upsample(512, 4, apply_dropout=True),
+            self.upsample(512, 4, apply_dropout=True),
+            self.upsample(512, 4),
+            self.upsample(256, 4),
+            self.upsample(128, 4),
+            self.upsample(64, 4),
         ]
 
-        out = tf.keras.layers.Conv2DTranspose(config.OUTPUT_CHANNELS, 4, strides=2,
+        out = tf.keras.layers.Conv2DTranspose(cfg.OUTPUT_CHANNELS, 4, strides=2,
         kernel_initializer=kernel_initializer, activation="tanh")
 
         x = inp
@@ -45,17 +45,18 @@ class GeneratorModel:
             x = down(x)
             skip_connections.append(x)
 
-        skip_connections = skip_connections[::-1][:-1]
+        skip_connections = reversed(skip_connections[:-1])
+        #print("\n\n\n",skip_connections[0],"\n\n\n")
         for up, skip_node in zip(upstack, skip_connections):
             x = up(x)
-            x = tf.keras.layers.concatenate()([x, skip_node])
+            x = tf.keras.layers.Concatenate()([x, skip_node])
 
         x = out(x)
         model = tf.keras.Model(inputs=inp, outputs=x)
 
         return model
 
-    def downsample(filters, size, apply_instancenorm=True):
+    def downsample(self, filters, size, apply_instancenorm=True):
         layer = tf.keras.Sequential()
         layer.add(tf.keras.layers.Conv2D(filters, size, strides=2, \
         padding="same", kernel_initializer=kernel_initializer, use_bias=False))
@@ -66,10 +67,10 @@ class GeneratorModel:
         layer.add(tf.keras.layers.LeakyReLU())
         return layer
 
-    def upsample(filters, size, apply_dropout=False):
+    def upsample(self, filters, size, apply_dropout=False):
         layer = tf.keras.Sequential()
         layer.add(tf.keras.layers.Conv2DTranspose(filters, size, strides=2,
-        padding="same", use_bias=True, kernel_initializer=kernel_initializer))
+        padding="same", use_bias=False, kernel_initializer=kernel_initializer))
 
         layer.add(tfa.layers.InstanceNormalization(gamma_initializer=gamma_initializer))
 

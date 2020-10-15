@@ -1,5 +1,5 @@
 import tensorflow as tf
-import config
+from . import config
 
 loss = tf.keras.losses.BinaryCrossentropy(from_logits=True, reduction=tf.keras.losses.Reduction.NONE)
 
