@@ -7,8 +7,9 @@ import os
 from . import config
 
 kernel_initializer = tf.random_normal_initializer(mean=0.0, stddev=0.02)
-gamma_initializer = tf.random_normal_initializer(mean=0.0, stddev=0.02)
+gamma_initializer = tf.keras.initializers.RandomNormal(mean=0.0, stddev=0.02)
 cfg = config.Configuration()
+
 class GeneratorModel:
     def unet_architecture(self):
         inp = tf.keras.layers.Input(shape = cfg.IMAGE_SIZE)
@@ -16,7 +17,7 @@ class GeneratorModel:
         "Image size {cfg.IMAGE_SIZE[:2]} not supported"
 
         downstack =[
-            self.downsample(64, 4),
+            self.downsample(64, 4, apply_instancenorm=False),
             self.downsample(128, 4),
             self.downsample(256, 4),
             self.downsample(512, 4),
@@ -36,7 +37,7 @@ class GeneratorModel:
             self.upsample(64, 4),
         ]
 
-        out = tf.keras.layers.Conv2DTranspose(cfg.OUTPUT_CHANNELS, 4, strides=2,
+        out = tf.keras.layers.Conv2DTranspose(cfg.OUTPUT_CHANNELS, 4, strides=2, padding="same",
         kernel_initializer=kernel_initializer, activation="tanh")
 
         x = inp
@@ -46,7 +47,6 @@ class GeneratorModel:
             skip_connections.append(x)
 
         skip_connections = reversed(skip_connections[:-1])
-        #print("\n\n\n",skip_connections[0],"\n\n\n")
         for up, skip_node in zip(upstack, skip_connections):
             x = up(x)
             x = tf.keras.layers.Concatenate()([x, skip_node])
