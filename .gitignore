@@ -1,2 +1,5 @@
 CyclicGAN/__pycache__/*
 TODO.txt
+build/
+cyclicgan.egg-info
+dist
