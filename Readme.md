@@ -14,6 +14,7 @@ This API aims to makes it easy for developers to train and infer from a CyclicGA
 Before installing the package, install the dependencies specified in `requirements.txt` file.
 
 # Installation
+This package is also available on Pypi and thus one can directly pip install it.
 ```python
 $ pip install cyclicgan
 ```
