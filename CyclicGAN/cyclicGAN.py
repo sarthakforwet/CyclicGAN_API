@@ -39,6 +39,7 @@ class CyclicGAN(tf.keras.Model):
         self.cyclic_loss = cyclic_loss
         self.identity_loss = identity_loss
 
+    @tf.function()
     def train_step(self, batch_data):
         """Function to run a single step of training."""
         real_x, real_y = batch_data
